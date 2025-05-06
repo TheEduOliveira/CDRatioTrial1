@@ -388,8 +388,6 @@ def main():
                         st.subheader("Simulation Results")
                         st.dataframe(results_df_adjusted)
 
-                        st.write(results)
-
                         st.subheader("Line Capacity vs. Actual Allocated Demand by Period")
                         # Pivot the DataFrame for display
                         capacity_demand_pivot_df = capacity_demand_ratio_df.pivot_table(
