@@ -381,7 +381,7 @@ def main():
                         line_capacity_dict = {(period, "Chocolate", line): data for line, periods_data in simulation_data["line_capacity"].items() for period, data in periods_data.items()}
                         production_rate_dict = {(period, "Chocolate", line, product): ratio for period, products_data in simulation_data["production_ratio"].items() for product, lines_data in products_data.items() for line, ratio in lines_data.items()}
 
-                        results_df_adjusted, capacity_demand_ratio_df, results = solve_production_problem(
+                        results_df_adjusted, capacity_demand_ratio_df = solve_production_problem(
                             demand_dict, line_capacity_dict, production_rate_dict
                         )
 

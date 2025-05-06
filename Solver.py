@@ -136,7 +136,7 @@ def solve_production_problem(demand, line_capacity, production_rate):
 
     capacity_demand_ratio_df = pd.DataFrame(capacity_demand_data)
 
-    return results_df_adjusted, capacity_demand_ratio_df, results_df
+    return results_df_adjusted, capacity_demand_ratio_df
 
 if __name__ == '__main__':
     # === Example Usage (for testing) ===
