@@ -93,7 +93,8 @@ def load_simulation_data(simulation_id, excel_file="InputData.xlsx"):
             }
             for product in products
         },
-        "production_ratio": {}
+        "production_ratio": {},
+        "weights": {}
     }
 
     for period in periods:
@@ -259,6 +260,44 @@ def simulation_form(initial_data=None):
 
     simulation_data["production_ratio"] = production_ratio_data
 
+    # Step 5: Weights (Peso/prioridade)
+
+    st.header("5. Priority Matrix (Product x Line)")
+    st.write("Selecione pesos de 1 a 10 para cada produto e linha. Quanto menor o peso, maior a prioridade.")
+    st.write("Deixe em branco para considerar apenas equaçãos de produção e demanda.")
+
+    initial_weights_data = pd.DataFrame(
+        {line: [1 for _ in available_products] for line in available_lines},
+        index=available_products
+    )
+
+    # Cria a matriz editável para os pesos
+    edited_weights_data = create_editable_matrix(
+        initial_weights_data.reset_index().rename(columns={"index": "Product"}),
+        "Product",
+        available_lines,
+        key="production_weights"
+    )
+
+    # Garante que os pesos sejam inteiros e estejam entre 1 e N
+    N = 10  # Defina o valor máximo de N
+    def validate_weight(val):
+        if isinstance(val, (int, np.integer)) and 1 <= val <= N:
+            return int(val)  # Converte para int explicitamente
+        else:
+            return 10
+
+    for col in edited_weights_data.columns:
+        if col != 'Product':
+            edited_weights_data[col] = edited_weights_data[col].map(validate_weight)
+
+    weights_dict = {}
+    for _, row in edited_weights_data.iterrows():
+        product = row['Product']
+        row_dict = row.drop('Product').to_dict()
+        weights_dict[product] = row_dict
+    simulation_data["weights"] = weights_dict
+
     return simulation_data
 
 
@@ -324,6 +363,12 @@ def SaveResults(excel_file, simulation_data, results_df_adjusted, capacity_deman
                 production_ratio_df["RelatedSimulation"] = st.session_state.related_simulation
                 production_ratio_df["Category"] = st.session_state.category
                 production_ratio_df.to_excel(writer, sheet_name="Production_Ratio", index=True)
+
+                # Salvar os pesos
+                weights_df = pd.DataFrame(simulation_data["weights"])
+                weights_df["RelatedSimulation"] = st.session_state.related_simulation
+                weights_df["Category"] = st.session_state.category
+                weights_df.to_excel(writer, sheet_name="Weights", index=True)
                 
                 writer.save()  # Salva as mudanças no arquivo
             st.success(f"Simulation {st.session_state.related_simulation} saved successfully!")
@@ -345,9 +390,13 @@ def main():
             demand_dict = {(period, "Chocolate", product): data for product, periods_data in simulation_data["demand"].items() for period, data in periods_data.items()}
             line_capacity_dict = {(period, "Chocolate", line): data for line, periods_data in simulation_data["line_capacity"].items() for period, data in periods_data.items()}
             production_rate_dict = {(period, "Chocolate", line, product): ratio for period, products_data in simulation_data["production_ratio"].items() for product, lines_data in products_data.items() for line, ratio in lines_data.items()}
+            
+            weights_dict = {(product, line): weight 
+                        for product, lines_data in simulation_data["weights"].items()
+                        for line, weight in lines_data.items()}
 
             results_df_adjusted, capacity_demand_ratio_df = solve_production_problem(
-                demand_dict, line_capacity_dict, production_rate_dict
+                demand_dict, line_capacity_dict, production_rate_dict, weights_dict
             )
 
             st.subheader("Simulation Results")
@@ -380,9 +429,13 @@ def main():
                         demand_dict = {(period, "Chocolate", product): data for product, periods_data in simulation_data["demand"].items() for period, data in periods_data.items()}
                         line_capacity_dict = {(period, "Chocolate", line): data for line, periods_data in simulation_data["line_capacity"].items() for period, data in periods_data.items()}
                         production_rate_dict = {(period, "Chocolate", line, product): ratio for period, products_data in simulation_data["production_ratio"].items() for product, lines_data in products_data.items() for line, ratio in lines_data.items()}
-
+                        weights_dict = {(product, line): weight 
+                            for product, lines_data in simulation_data["weights"].items()
+                            for line, weight in lines_data.items()}
+                        
+                        
                         results_df_adjusted, capacity_demand_ratio_df = solve_production_problem(
-                            demand_dict, line_capacity_dict, production_rate_dict
+                            demand_dict, line_capacity_dict, production_rate_dict, weights_dict
                         )
 
                         st.subheader("Simulation Results")

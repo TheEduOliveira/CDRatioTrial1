@@ -3,7 +3,7 @@ from pyomo.environ import *
 from pyomo.opt import SolverFactory
 import numpy as np
 
-def solve_production_problem(demand, line_capacity, production_rate):
+def solve_production_problem(demand, line_capacity, production_rate, weights):
     """
     Solves the production allocation problem.
 
@@ -54,7 +54,7 @@ def solve_production_problem(demand, line_capacity, production_rate):
     model.CapacityConstraint = Constraint(model.PERIODS, model.CATEGORIES, model.LINES, rule=capacity_rule)
 
     model.Objective = Objective(
-        expr=sum(model.X[p, c, l, prod] for p in model.PERIODS for c in model.CATEGORIES for l in model.LINES for prod in model.PRODUCTS),
+        expr=sum(model.X[p, c, l, prod] * weights.get((prod, l), 10) for p in model.PERIODS for c in model.CATEGORIES for l in model.LINES for prod in model.PRODUCTS),
         sense=minimize
     )
 
@@ -141,7 +141,7 @@ def solve_production_problem(demand, line_capacity, production_rate):
 if __name__ == '__main__':
     # === Example Usage (for testing) ===
     # Replace with your actual data loading
-    file_path = "C://Users//KGQ2858//OneDrive - MDLZ//Downloads//solvercomstreamlit//InputData.xlsx"  # Or the path to your CSVs
+    file_path = "InputData.xlsx"  # Or the path to your CSVs
     demand_df = pd.read_excel(file_path, sheet_name="Demand")
     line_capacity_df = pd.read_excel(file_path, sheet_name="Line_Capacity")
     production_df = pd.read_excel(file_path, sheet_name="Production")
